@@ -6,6 +6,37 @@
 echo "🔐 Installing Encryption 4 People (E4P)..."
 echo "=========================================="
 
+# Check if git is installed, install if missing
+if ! command -v git &> /dev/null; then
+    echo "📦 git not found, installing..."
+    if command -v apt-get &> /dev/null; then
+        sudo apt-get update
+        sudo apt-get install -y git
+    elif command -v yum &> /dev/null; then
+        sudo yum install -y git
+    elif command -v dnf &> /dev/null; then
+        sudo dnf install -y git
+    elif command -v brew &> /dev/null; then
+        brew install git
+    else
+        echo "❌ Cannot install git automatically. Please install git manually."
+        exit 1
+    fi
+fi
+
+# Clone the repository if not already present
+if [ ! -d "E4P" ]; then
+    echo "📥 Cloning E4P repository..."
+    git clone https://github.com/zZedix/E4P.git
+    if [ $? -ne 0 ]; then
+        echo "❌ Failed to clone repository. Please check your internet connection."
+        exit 1
+    fi
+fi
+
+# Change to the E4P directory
+cd E4P
+
 # Check if Python 3 is installed
 if ! command -v python3 &> /dev/null; then
     echo "❌ Python 3 is required but not installed. Please install Python 3 first."

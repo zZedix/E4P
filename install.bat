@@ -5,6 +5,20 @@ REM This script installs and runs the E4P secure file encryption web application
 echo 🔐 Installing Encryption 4 People (E4P)...
 echo ==========================================
 
+REM Clone the repository if not already present
+if not exist "E4P" (
+    echo 📥 Cloning E4P repository...
+    git clone https://github.com/zZedix/E4P.git
+    if errorlevel 1 (
+        echo ❌ Failed to clone repository. Please check your internet connection.
+        pause
+        exit /b 1
+    )
+)
+
+REM Change to the E4P directory
+cd E4P
+
 REM Check if Python is installed
 python --version >nul 2>&1
 if errorlevel 1 (
