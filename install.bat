@@ -13,12 +13,21 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Check if pip is installed
+REM Check if pip is installed, install if missing
 pip --version >nul 2>&1
 if errorlevel 1 (
-    echo ❌ pip is required but not installed. Please install pip first.
-    pause
-    exit /b 1
+    echo 📦 pip not found, attempting to install...
+    
+    REM Try to install pip using ensurepip
+    python -m ensurepip --upgrade >nul 2>&1
+    if errorlevel 1 (
+        echo ❌ Failed to install pip automatically. Please install pip manually.
+        echo You can download Python from https://python.org which includes pip.
+        pause
+        exit /b 1
+    )
+    
+    echo ✅ pip installed successfully!
 )
 
 REM Install dependencies

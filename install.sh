@@ -12,14 +12,73 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
-# Check if pip is installed
+# Check if pip3 is installed, install if missing
 if ! command -v pip3 &> /dev/null; then
-    echo "❌ pip3 is required but not installed. Please install pip3 first."
-    exit 1
+    echo "📦 pip3 not found, installing..."
+    
+    # Detect OS and install pip3
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        # Linux
+        if command -v apt-get &> /dev/null; then
+            # Ubuntu/Debian
+            echo "Installing pip3 via apt-get..."
+            sudo apt-get update
+            sudo apt-get install -y python3-pip python3-venv
+        elif command -v yum &> /dev/null; then
+            # CentOS/RHEL
+            echo "Installing pip3 via yum..."
+            sudo yum install -y python3-pip python3-venv
+        elif command -v dnf &> /dev/null; then
+            # Fedora
+            echo "Installing pip3 via dnf..."
+            sudo dnf install -y python3-pip python3-venv
+        else
+            echo "❌ Cannot install pip3 automatically. Please install pip3 manually."
+            exit 1
+        fi
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS
+        if command -v brew &> /dev/null; then
+            echo "Installing pip3 via Homebrew..."
+            brew install python3
+        else
+            echo "❌ Homebrew not found. Please install pip3 manually or install Homebrew first."
+            exit 1
+        fi
+    else
+        echo "❌ Unsupported operating system. Please install pip3 manually."
+        exit 1
+    fi
+    
+    # Verify pip3 installation
+    if ! command -v pip3 &> /dev/null; then
+        echo "❌ Failed to install pip3. Please install it manually."
+        exit 1
+    fi
+    
+    echo "✅ pip3 installed successfully!"
+fi
+
+# Install SSL dependencies for HTTPS setup
+echo "🔒 Installing SSL dependencies..."
+if command -v apt-get &> /dev/null; then
+    # Ubuntu/Debian
+    sudo apt-get install -y certbot openssl
+elif command -v yum &> /dev/null; then
+    # CentOS/RHEL
+    sudo yum install -y certbot openssl
+elif command -v dnf &> /dev/null; then
+    # Fedora
+    sudo dnf install -y certbot openssl
+elif command -v brew &> /dev/null; then
+    # macOS
+    brew install certbot openssl
+else
+    echo "⚠️  Could not install SSL dependencies automatically. You may need to install certbot and openssl manually for HTTPS support."
 fi
 
 # Install dependencies
-echo "📦 Installing dependencies..."
+echo "📦 Installing Python dependencies..."
 pip3 install -r requirements.txt
 
 # Create .env file if it doesn't exist
