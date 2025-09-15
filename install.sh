@@ -94,18 +94,53 @@ fi
 echo "🔒 Installing SSL dependencies..."
 if command -v apt-get &> /dev/null; then
     # Ubuntu/Debian
-    sudo apt-get install -y certbot openssl
+    echo "Installing certbot and OpenSSL via apt-get..."
+    sudo apt-get install -y certbot openssl python3-openssl python3-cryptography
+    
+    # Fix OpenSSL compatibility issues
+    echo "🔧 Fixing OpenSSL compatibility issues..."
+    sudo apt-get install --reinstall python3-openssl python3-cryptography -y
+    pip3 install --upgrade pyOpenSSL
+    
+    # Test OpenSSL compatibility
+    echo "🧪 Testing OpenSSL compatibility..."
+    if ! python3 -c "from OpenSSL import crypto; print('OpenSSL works')" 2>/dev/null; then
+        echo "⚠️  OpenSSL compatibility issue detected, trying alternative installation..."
+        
+        # Try installing certbot via snap as fallback
+        if command -v snap &> /dev/null; then
+            echo "Installing certbot via snap..."
+            sudo snap install --classic certbot
+            sudo ln -sf /snap/bin/certbot /usr/bin/certbot
+        else
+            echo "Installing certbot via pip..."
+            pip3 install certbot
+        fi
+    fi
+    
 elif command -v yum &> /dev/null; then
     # CentOS/RHEL
-    sudo yum install -y certbot openssl
+    sudo yum install -y certbot openssl python3-pyOpenSSL python3-cryptography
+    pip3 install --upgrade pyOpenSSL
 elif command -v dnf &> /dev/null; then
     # Fedora
-    sudo dnf install -y certbot openssl
+    sudo dnf install -y certbot openssl python3-pyOpenSSL python3-cryptography
+    pip3 install --upgrade pyOpenSSL
 elif command -v brew &> /dev/null; then
     # macOS
     brew install certbot openssl
+    pip3 install --upgrade pyOpenSSL
 else
     echo "⚠️  Could not install SSL dependencies automatically. You may need to install certbot and openssl manually for HTTPS support."
+fi
+
+# Final OpenSSL compatibility test
+echo "🔍 Final OpenSSL compatibility test..."
+if python3 -c "from OpenSSL import crypto; print('✅ OpenSSL works')" 2>/dev/null; then
+    echo "✅ OpenSSL compatibility confirmed!"
+else
+    echo "❌ OpenSSL compatibility issues remain. HTTPS setup may fail."
+    echo "   You can try running: ./fix_openssl.sh after installation"
 fi
 
 # Install dependencies

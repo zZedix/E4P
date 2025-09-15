@@ -44,8 +44,29 @@ if errorlevel 1 (
     echo ✅ pip installed successfully!
 )
 
+REM Install SSL dependencies for HTTPS setup
+echo 🔒 Installing SSL dependencies...
+echo Installing OpenSSL Python bindings...
+pip install --upgrade pyOpenSSL cryptography
+
+REM Test OpenSSL compatibility
+echo 🧪 Testing OpenSSL compatibility...
+python -c "from OpenSSL import crypto; print('✅ OpenSSL works')" 2>nul
+if errorlevel 1 (
+    echo ⚠️  OpenSSL compatibility issue detected, trying to fix...
+    pip install --upgrade --force-reinstall pyOpenSSL cryptography
+    python -c "from OpenSSL import crypto; print('✅ OpenSSL works')" 2>nul
+    if errorlevel 1 (
+        echo ❌ OpenSSL compatibility issues remain. HTTPS setup may fail.
+    ) else (
+        echo ✅ OpenSSL compatibility fixed!
+    )
+) else (
+    echo ✅ OpenSSL compatibility confirmed!
+)
+
 REM Install dependencies
-echo 📦 Installing dependencies...
+echo 📦 Installing Python dependencies...
 pip install -r requirements.txt
 
 REM Create .env file if it doesn't exist

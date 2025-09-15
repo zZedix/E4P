@@ -9,6 +9,11 @@ from pathlib import Path
 import argparse
 
 
+def command_exists(command):
+    """Check if a command exists in the system."""
+    return shutil.which(command) is not None
+
+
 def check_dependencies():
     """Check if required dependencies are installed."""
     required_commands = ['certbot', 'openssl']
@@ -82,6 +87,14 @@ def generate_letsencrypt_cert(domain: str, email: str, cert_dir: Path):
         try:
             # Try to install/upgrade pyOpenSSL
             subprocess.run(['pip3', 'install', '--upgrade', 'pyOpenSSL'], capture_output=True)
+            
+            # Try to reinstall OpenSSL Python bindings
+            if command_exists('apt-get'):
+                subprocess.run(['sudo', 'apt-get', 'install', '--reinstall', 'python3-openssl', 'python3-cryptography', '-y'], capture_output=True)
+            elif command_exists('yum'):
+                subprocess.run(['sudo', 'yum', 'reinstall', 'python3-pyOpenSSL', 'python3-cryptography', '-y'], capture_output=True)
+            elif command_exists('dnf'):
+                subprocess.run(['sudo', 'dnf', 'reinstall', 'python3-pyOpenSSL', 'python3-cryptography', '-y'], capture_output=True)
         except:
             pass
         
