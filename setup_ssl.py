@@ -65,12 +65,27 @@ def generate_letsencrypt_cert(domain: str, email: str, cert_dir: Path):
     print(f"🔒 Generating Let's Encrypt certificate for {domain}...")
     
     try:
+        # Check if certbot is working properly first
+        print("🔍 Checking certbot installation...")
+        test_result = subprocess.run(['certbot', '--version'], capture_output=True, text=True)
+        if test_result.returncode != 0:
+            print(f"❌ Certbot is not working properly: {test_result.stderr}")
+            return None, None
+        
         # Stop any running web server on port 80
         print("🛑 Stopping any web server on port 80...")
         subprocess.run(['sudo', 'pkill', '-f', 'python.*run.py'], capture_output=True)
         subprocess.run(['sudo', 'pkill', '-f', 'uvicorn'], capture_output=True)
         
-        # Generate certificate using standalone mode
+        # Try to fix OpenSSL compatibility issue
+        print("🔧 Attempting to fix OpenSSL compatibility...")
+        try:
+            # Try to install/upgrade pyOpenSSL
+            subprocess.run(['pip3', 'install', '--upgrade', 'pyOpenSSL'], capture_output=True)
+        except:
+            pass
+        
+        # Generate certificate using standalone mode with additional flags
         result = subprocess.run([
             'sudo', 'certbot', 'certonly',
             '--standalone',
@@ -78,7 +93,9 @@ def generate_letsencrypt_cert(domain: str, email: str, cert_dir: Path):
             '--agree-tos',
             '--email', email,
             '--domains', domain,
-            '--cert-path', str(cert_dir)
+            '--cert-path', str(cert_dir),
+            '--pre-hook', 'pkill -f "python.*run.py" || true',
+            '--post-hook', 'echo "Certificate generation complete"'
         ], capture_output=True, text=True)
         
         if result.returncode == 0:
@@ -110,10 +127,14 @@ def generate_letsencrypt_cert(domain: str, email: str, cert_dir: Path):
         else:
             print(f"❌ Error generating Let's Encrypt certificate:")
             print(f"   {result.stderr}")
+            print("💡 This might be due to OpenSSL compatibility issues.")
+            print("   The system will fall back to self-signed certificate.")
             return None, None
             
     except Exception as e:
         print(f"❌ Error generating Let's Encrypt certificate: {e}")
+        print("💡 This might be due to OpenSSL compatibility issues.")
+        print("   The system will fall back to self-signed certificate.")
         return None, None
 
 
