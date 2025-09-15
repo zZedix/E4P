@@ -51,8 +51,18 @@ git clone https://github.com/zZedix/E4P.git && cd E4P && install.bat
    python run.py
    ```
 
-4. **Access the application**:
-   Open http://localhost:8080 in your browser
+4. **Setup HTTPS** (mandatory):
+   ```bash
+   python setup_certbot.py --domain yourdomain.com --email your@email.com
+   ```
+
+5. **Run the application**:
+   ```bash
+   python run.py
+   ```
+
+6. **Access the application**:
+   Open https://yourdomain.com in your browser
 
 ### HTTPS Setup (Mandatory)
 
@@ -140,7 +150,7 @@ E4P uses a custom binary container format with the following structure:
 |----------|---------|-------------|
 | `APP_HOST` | `0.0.0.0` | Server host |
 | `APP_PORT` | `8080` | Server port |
-| `USE_HTTPS` | `false` | Enable HTTPS |
+| `USE_HTTPS` | `true` | Enable HTTPS (mandatory) |
 | `DOMAIN` | `None` | Domain name for SSL certificate |
 | `SSL_CERT_PATH` | `None` | Path to SSL certificate file |
 | `SSL_KEY_PATH` | `None` | Path to SSL private key file |
