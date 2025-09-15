@@ -14,6 +14,51 @@ def command_exists(command):
     return shutil.which(command) is not None
 
 
+def install_certbot():
+    """Install certbot using various methods."""
+    print("📦 Installing certbot...")
+    
+    # Try different installation methods
+    install_methods = [
+        # Method 1: apt (Ubuntu/Debian)
+        (['sudo', 'apt-get', 'update'], ['sudo', 'apt-get', 'install', 'certbot', 'python3-certbot-nginx', '-y']),
+        # Method 2: snap (universal)
+        (['sudo', 'snap', 'install', 'core'], ['sudo', 'snap', 'install', '--classic', 'certbot']),
+        # Method 3: pip
+        (['pip3', 'install', '--upgrade', 'pip'], ['pip3', 'install', 'certbot']),
+        # Method 4: yum (CentOS/RHEL)
+        (['sudo', 'yum', 'install', 'epel-release', '-y'], ['sudo', 'yum', 'install', 'certbot', '-y']),
+        # Method 5: dnf (Fedora)
+        (['sudo', 'dnf', 'install', 'epel-release', '-y'], ['sudo', 'dnf', 'install', 'certbot', '-y']),
+    ]
+    
+    for prep_cmd, install_cmd in install_methods:
+        try:
+            print(f"🔧 Trying: {' '.join(install_cmd)}")
+            
+            # Run preparation command if needed
+            if prep_cmd:
+                prep_result = subprocess.run(prep_cmd, capture_output=True, text=True)
+                if prep_result.returncode != 0:
+                    continue
+            
+            # Run installation command
+            install_result = subprocess.run(install_cmd, capture_output=True, text=True)
+            if install_result.returncode == 0:
+                print(f"✅ Certbot installed successfully using: {' '.join(install_cmd)}")
+                return True
+            else:
+                print(f"⚠️  Installation failed: {install_result.stderr}")
+                continue
+                
+        except Exception as e:
+            print(f"⚠️  Installation method failed: {e}")
+            continue
+    
+    print("❌ All certbot installation methods failed")
+    return False
+
+
 def check_dependencies():
     """Check if required dependencies are installed."""
     required_commands = ['certbot', 'openssl']
@@ -25,11 +70,25 @@ def check_dependencies():
     
     if missing:
         print(f"❌ Missing required dependencies: {', '.join(missing)}")
-        print("\n📦 Install them with:")
-        print("  Ubuntu/Debian: sudo apt-get install certbot openssl")
-        print("  CentOS/RHEL: sudo yum install certbot openssl")
-        print("  macOS: brew install certbot openssl")
-        return False
+        
+        # Try to install certbot automatically
+        if 'certbot' in missing:
+            print("\n🔧 Attempting to install certbot automatically...")
+            if install_certbot():
+                # Check again after installation
+                if shutil.which('certbot'):
+                    print("✅ Certbot installed successfully!")
+                    missing.remove('certbot')
+                else:
+                    print("❌ Certbot installation failed")
+        
+        if missing:
+            print(f"\n📦 Please install missing dependencies manually:")
+            print("  Ubuntu/Debian: sudo apt-get install certbot openssl")
+            print("  CentOS/RHEL: sudo yum install certbot openssl")
+            print("  macOS: brew install certbot openssl")
+            print("  Or try: sudo snap install --classic certbot")
+            return False
     
     return True
 
@@ -77,10 +136,18 @@ def generate_letsencrypt_cert(domain: str, email: str, cert_dir: Path):
             print(f"❌ Certbot is not working properly: {test_result.stderr}")
             return None, None
         
+        print(f"✅ Certbot version: {test_result.stdout.strip()}")
+        
         # Stop any running web server on port 80
         print("🛑 Stopping any web server on port 80...")
         subprocess.run(['sudo', 'pkill', '-f', 'python.*run.py'], capture_output=True)
         subprocess.run(['sudo', 'pkill', '-f', 'uvicorn'], capture_output=True)
+        subprocess.run(['sudo', 'pkill', '-f', 'nginx'], capture_output=True)
+        subprocess.run(['sudo', 'pkill', '-f', 'apache'], capture_output=True)
+        
+        # Wait a moment for processes to stop
+        import time
+        time.sleep(2)
         
         # Try to fix OpenSSL compatibility issue
         print("🔧 Attempting to fix OpenSSL compatibility...")
@@ -98,7 +165,16 @@ def generate_letsencrypt_cert(domain: str, email: str, cert_dir: Path):
         except:
             pass
         
-        # Generate certificate using standalone mode with additional flags
+        # Check if port 80 is available
+        print("🔍 Checking if port 80 is available...")
+        port_check = subprocess.run(['sudo', 'netstat', '-tlnp'], capture_output=True, text=True)
+        if ':80 ' in port_check.stdout:
+            print("⚠️  Port 80 is still in use. Trying to free it...")
+            subprocess.run(['sudo', 'fuser', '-k', '80/tcp'], capture_output=True)
+            time.sleep(3)
+        
+        # Generate certificate using standalone mode
+        print("🔐 Running certbot to generate certificate...")
         result = subprocess.run([
             'sudo', 'certbot', 'certonly',
             '--standalone',
@@ -106,10 +182,18 @@ def generate_letsencrypt_cert(domain: str, email: str, cert_dir: Path):
             '--agree-tos',
             '--email', email,
             '--domains', domain,
-            '--cert-path', str(cert_dir),
-            '--pre-hook', 'pkill -f "python.*run.py" || true',
-            '--post-hook', 'echo "Certificate generation complete"'
+            '--pre-hook', 'pkill -f "python.*run.py" || true; pkill -f "uvicorn" || true; pkill -f "nginx" || true; pkill -f "apache" || true',
+            '--post-hook', 'echo "Certificate generation complete"',
+            '--expand',  # Allow expanding existing certificates
+            '--force-renewal'  # Force renewal if certificate exists
         ], capture_output=True, text=True)
+        
+        print(f"📋 Certbot output:")
+        print(f"   Return code: {result.returncode}")
+        if result.stdout:
+            print(f"   stdout: {result.stdout}")
+        if result.stderr:
+            print(f"   stderr: {result.stderr}")
         
         if result.returncode == 0:
             # Find the generated certificate files
@@ -133,14 +217,30 @@ def generate_letsencrypt_cert(domain: str, email: str, cert_dir: Path):
                 print(f"   Certificate: {local_cert}")
                 print(f"   Private Key: {local_key}")
                 
+                # Verify certificate
+                verify_result = subprocess.run([
+                    'openssl', 'x509', '-in', str(local_cert), '-text', '-noout'
+                ], capture_output=True, text=True)
+                
+                if verify_result.returncode == 0:
+                    print("✅ Certificate verification successful")
+                else:
+                    print("⚠️  Certificate verification failed")
+                
                 return str(local_cert), str(local_key)
             else:
                 print("❌ Certificate files not found after generation")
+                print(f"   Expected cert: {cert_path}")
+                print(f"   Expected key: {key_path}")
                 return None, None
         else:
             print(f"❌ Error generating Let's Encrypt certificate:")
             print(f"   {result.stderr}")
-            print("💡 This might be due to OpenSSL compatibility issues.")
+            print("💡 Common issues:")
+            print("   - Domain not pointing to this server")
+            print("   - Port 80 not accessible")
+            print("   - OpenSSL compatibility issues")
+            print("   - Rate limiting from Let's Encrypt")
             print("   The system will fall back to self-signed certificate.")
             return None, None
             

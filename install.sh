@@ -183,24 +183,32 @@ if [ -t 0 ]; then
     done
     
     echo ""
-    echo "🔒 Setting up SSL certificate for $domain..."
-    python3 setup_ssl.py --domain "$domain" --email "$email"
+    echo "🔒 Setting up SSL certificate for $domain using certbot..."
+    python3 setup_certbot.py --domain "$domain" --email "$email"
     
     if [ $? -eq 0 ]; then
-        echo "✅ HTTPS setup complete!"
+        echo "✅ Certbot SSL setup complete!"
         echo "🌐 Your application will be available at: https://$domain"
     else
-        echo "⚠️  Let's Encrypt failed, trying self-signed certificate..."
-        python3 setup_ssl.py --domain "$domain" --email "$email" --self-signed
+        echo "⚠️  Certbot failed, trying fallback SSL setup..."
+        python3 setup_ssl.py --domain "$domain" --email "$email"
         
         if [ $? -eq 0 ]; then
-            echo "✅ Self-signed certificate setup complete!"
+            echo "✅ Fallback SSL setup complete!"
             echo "🌐 Your application will be available at: https://$domain"
-            echo "⚠️  Note: Browsers will show a security warning for self-signed certificates."
         else
-            echo "❌ SSL certificate setup failed. Please check your domain and try again."
-            echo "You can run: ./setup_https_interactive.sh to try again later."
-            exit 1
+            echo "⚠️  Let's Encrypt failed, trying self-signed certificate..."
+            python3 setup_ssl.py --domain "$domain" --email "$email" --self-signed
+            
+            if [ $? -eq 0 ]; then
+                echo "✅ Self-signed certificate setup complete!"
+                echo "🌐 Your application will be available at: https://$domain"
+                echo "⚠️  Note: Browsers will show a security warning for self-signed certificates."
+            else
+                echo "❌ SSL certificate setup failed. Please check your domain and try again."
+                echo "You can run: ./setup_https_interactive.sh to try again later."
+                exit 1
+            fi
         fi
     fi
     

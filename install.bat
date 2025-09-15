@@ -98,25 +98,33 @@ if "%email%"=="" (
 )
 
 echo.
-echo 🔒 Setting up SSL certificate for %domain%...
-python setup_ssl.py --domain "%domain%" --email "%email%"
+echo 🔒 Setting up SSL certificate for %domain% using certbot...
+python setup_certbot.py --domain "%domain%" --email "%email%"
 
 if errorlevel 1 (
-    echo ⚠️  Let's Encrypt failed, trying self-signed certificate...
-    python setup_ssl.py --domain "%domain%" --email "%email%" --self-signed
+    echo ⚠️  Certbot failed, trying fallback SSL setup...
+    python setup_ssl.py --domain "%domain%" --email "%email%"
     
     if errorlevel 1 (
-        echo ❌ SSL certificate setup failed. Please check your domain and try again.
-        echo You can run: setup_https_interactive.sh to try again later.
-        pause
-        exit /b 1
+        echo ⚠️  Let's Encrypt failed, trying self-signed certificate...
+        python setup_ssl.py --domain "%domain%" --email "%email%" --self-signed
+        
+        if errorlevel 1 (
+            echo ❌ SSL certificate setup failed. Please check your domain and try again.
+            echo You can run: setup_https_interactive.sh to try again later.
+            pause
+            exit /b 1
+        ) else (
+            echo ✅ Self-signed certificate setup complete!
+            echo 🌐 Your application will be available at: https://%domain%
+            echo ⚠️  Note: Browsers will show a security warning for self-signed certificates.
+        )
     ) else (
-        echo ✅ Self-signed certificate setup complete!
+        echo ✅ Fallback SSL setup complete!
         echo 🌐 Your application will be available at: https://%domain%
-        echo ⚠️  Note: Browsers will show a security warning for self-signed certificates.
     )
 ) else (
-    echo ✅ HTTPS setup complete!
+    echo ✅ Certbot SSL setup complete!
     echo 🌐 Your application will be available at: https://%domain%
 )
 
