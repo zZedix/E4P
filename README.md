@@ -10,6 +10,8 @@ A secure, modern web application for encrypting files with strong cryptography. 
 - **Streaming Encryption**: Handles large files without memory issues
 - **Authenticated Encryption**: Prevents tampering and ensures integrity
 - **Secure Download Tokens**: Time-limited, HMAC-signed download links
+- **HTTPS Support**: Automatic SSL/TLS certificate generation with Let's Encrypt
+- **Self-Signed Certificates**: For testing and development environments
 
 ## 🚀 Quick Start
 
@@ -54,6 +56,33 @@ git clone https://github.com/zZedix/E4P.git && cd E4P && chmod +x install.sh && 
 
 4. **Access the application**:
    Open http://localhost:8080 in your browser
+
+### HTTPS Setup (Optional)
+
+E4P supports automatic HTTPS setup with SSL certificates:
+
+1. **Using Let's Encrypt** (recommended for production):
+   ```bash
+   python setup_ssl.py --domain yourdomain.com --email your@email.com
+   ```
+
+2. **Using self-signed certificate** (for testing):
+   ```bash
+   python setup_ssl.py --domain localhost --email test@example.com --self-signed
+   ```
+
+3. **Manual HTTPS setup**:
+   ```bash
+   # Edit .env file
+   USE_HTTPS=true
+   DOMAIN=yourdomain.com
+   SSL_CERT_PATH=certs/yourdomain.com.crt
+   SSL_KEY_PATH=certs/yourdomain.com.key
+   EMAIL=your@email.com
+   APP_PORT=443
+   ```
+
+**Note**: For Let's Encrypt, ensure your domain points to this server and port 80 is accessible.
 
 ### Docker Deployment
 
@@ -124,6 +153,11 @@ E4P uses a custom binary container format with the following structure:
 |----------|---------|-------------|
 | `APP_HOST` | `0.0.0.0` | Server host |
 | `APP_PORT` | `8080` | Server port |
+| `USE_HTTPS` | `false` | Enable HTTPS |
+| `DOMAIN` | `None` | Domain name for SSL certificate |
+| `SSL_CERT_PATH` | `None` | Path to SSL certificate file |
+| `SSL_KEY_PATH` | `None` | Path to SSL private key file |
+| `EMAIL` | `None` | Email for Let's Encrypt registration |
 | `MAX_FILE_SIZE_MB` | `2048` | Maximum file size in MB |
 | `MAX_CONCURRENCY` | `2` | Maximum concurrent encryption tasks |
 | `ARGON2_MEMORY_MB` | `256` | Argon2id memory cost in MB |

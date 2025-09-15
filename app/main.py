@@ -109,9 +109,23 @@ async def shutdown_event():
 
 if __name__ == "__main__":
     import uvicorn
+    
+    # Configure SSL if HTTPS is enabled
+    ssl_keyfile = None
+    ssl_certfile = None
+    
+    if settings.use_https and settings.ssl_key_path and settings.ssl_cert_path:
+        ssl_keyfile = settings.ssl_key_path
+        ssl_certfile = settings.ssl_cert_path
+        print(f"🔒 Starting with HTTPS on {settings.domain or settings.app_host}:{settings.app_port}")
+    else:
+        print(f"🌐 Starting with HTTP on {settings.app_host}:{settings.app_port}")
+    
     uvicorn.run(
         "app.main:app",
         host=settings.app_host,
         port=settings.app_port,
-        reload=True
+        reload=True,
+        ssl_keyfile=ssl_keyfile,
+        ssl_certfile=ssl_certfile
     )

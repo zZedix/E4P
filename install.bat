@@ -32,13 +32,50 @@ if not exist .env (
     echo ✅ Configuration file created. You can edit .env to customize settings.
 )
 
+REM Ask about HTTPS setup
+echo.
+echo 🔐 HTTPS Configuration (Optional)
+echo ==================================
+set /p setup_https="Do you want to set up HTTPS with SSL certificate? (y/N): "
+
+if /i "%setup_https%"=="y" (
+    echo.
+    set /p domain="Enter your domain name (e.g., example.com): "
+    set /p email="Enter your email address for Let's Encrypt: "
+    
+    if not "%domain%"=="" if not "%email%"=="" (
+        echo 🔒 Setting up SSL certificate...
+        python setup_ssl.py --domain "%domain%" --email "%email%"
+        
+        if errorlevel 1 (
+            echo ⚠️  HTTPS setup failed, continuing with HTTP...
+        ) else (
+            echo ✅ HTTPS setup complete!
+            echo 🌐 Your application will be available at: https://%domain%
+        )
+    ) else (
+        echo ⚠️  Invalid domain or email, continuing with HTTP...
+    )
+)
+
 REM Create temp directory
 if not exist "C:\tmp\e4p" mkdir "C:\tmp\e4p"
 
 REM Start the application
+echo.
 echo 🚀 Starting E4P server...
 echo ==========================================
-echo Access the application at: http://localhost:8080
+
+REM Check if HTTPS is enabled
+findstr /C:"USE_HTTPS=true" .env >nul 2>&1
+if not errorlevel 1 (
+    for /f "tokens=2 delims==" %%a in ('findstr "DOMAIN=" .env') do set domain=%%a
+    for /f "tokens=2 delims==" %%a in ('findstr "APP_PORT=" .env') do set port=%%a
+    echo 🔒 HTTPS enabled - Access at: https://%domain%:%port%
+) else (
+    echo 🌐 HTTP enabled - Access at: http://localhost:8080
+)
+
 echo Press Ctrl+C to stop the server
 echo ==========================================
 

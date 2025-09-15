@@ -29,13 +29,49 @@ if [ ! -f .env ]; then
     echo "✅ Configuration file created. You can edit .env to customize settings."
 fi
 
+# Ask about HTTPS setup
+echo ""
+echo "🔐 HTTPS Configuration (Optional)"
+echo "=================================="
+read -p "Do you want to set up HTTPS with SSL certificate? (y/N): " setup_https
+
+if [[ $setup_https =~ ^[Yy]$ ]]; then
+    echo ""
+    read -p "Enter your domain name (e.g., example.com): " domain
+    read -p "Enter your email address for Let's Encrypt: " email
+    
+    if [ -n "$domain" ] && [ -n "$email" ]; then
+        echo "🔒 Setting up SSL certificate..."
+        python3 setup_ssl.py --domain "$domain" --email "$email"
+        
+        if [ $? -eq 0 ]; then
+            echo "✅ HTTPS setup complete!"
+            echo "🌐 Your application will be available at: https://$domain"
+        else
+            echo "⚠️  HTTPS setup failed, continuing with HTTP..."
+        fi
+    else
+        echo "⚠️  Invalid domain or email, continuing with HTTP..."
+    fi
+fi
+
 # Create temp directory
 mkdir -p /tmp/e4p
 
 # Start the application
+echo ""
 echo "🚀 Starting E4P server..."
 echo "=========================================="
-echo "Access the application at: http://localhost:8080"
+
+# Check if HTTPS is enabled
+if grep -q "USE_HTTPS=true" .env 2>/dev/null; then
+    domain=$(grep "DOMAIN=" .env | cut -d'=' -f2)
+    port=$(grep "APP_PORT=" .env | cut -d'=' -f2)
+    echo "🔒 HTTPS enabled - Access at: https://$domain:$port"
+else
+    echo "🌐 HTTP enabled - Access at: http://localhost:8080"
+fi
+
 echo "Press Ctrl+C to stop the server"
 echo "=========================================="
 
