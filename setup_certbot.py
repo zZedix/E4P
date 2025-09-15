@@ -154,24 +154,43 @@ def generate_certificate(domain: str, email: str, cert_dir: Path):
         key_path = letsencrypt_dir / 'privkey.pem'
         
         if cert_path.exists() and key_path.exists():
-            # Copy to local directory
+            # Copy to E4P folder (certs directory)
             local_cert = cert_dir / f"{domain}.crt"
             local_key = cert_dir / f"{domain}.key"
+            
+            print(f"📁 Copying certificates to E4P folder...")
+            print(f"   From: {cert_path}")
+            print(f"   To: {local_cert}")
+            print(f"   From: {key_path}")
+            print(f"   To: {local_key}")
             
             shutil.copy2(cert_path, local_cert)
             shutil.copy2(key_path, local_key)
             
-            # Set permissions
+            # Set proper permissions
             os.chmod(local_cert, 0o644)
             os.chmod(local_key, 0o600)
             
-            print(f"✅ Certificate generated successfully!")
-            print(f"   Certificate: {local_cert}")
-            print(f"   Private Key: {local_key}")
-            
-            return str(local_cert), str(local_key)
+            # Verify the copied files
+            if local_cert.exists() and local_key.exists():
+                print(f"✅ Certificates copied successfully to E4P folder!")
+                print(f"   Certificate: {local_cert}")
+                print(f"   Private Key: {local_key}")
+                
+                # Show file sizes
+                cert_size = local_cert.stat().st_size
+                key_size = local_key.stat().st_size
+                print(f"   Certificate size: {cert_size:,} bytes")
+                print(f"   Private key size: {key_size:,} bytes")
+                
+                return str(local_cert), str(local_key)
+            else:
+                print("❌ Failed to copy certificate files to E4P folder")
+                return None, None
         else:
             print("❌ Certificate files not found after generation")
+            print(f"   Expected cert: {cert_path}")
+            print(f"   Expected key: {key_path}")
             return None, None
     else:
         print("❌ Certificate generation failed")
@@ -187,11 +206,14 @@ def update_env_file(domain: str, email: str, cert_path: str, key_path: str, port
     """Update .env file with SSL configuration."""
     env_file = Path('.env')
     
+    print(f"📝 Updating .env file with SSL configuration...")
+    
     # Read existing .env content
     env_content = ""
     if env_file.exists():
         with open(env_file, 'r') as f:
             env_content = f.read()
+        print(f"   Found existing .env file")
     else:
         # Create basic .env if it doesn't exist
         env_content = """APP_HOST=0.0.0.0
@@ -219,6 +241,7 @@ RATE_LIMIT_REQUESTS_PER_MINUTE=60
 # Temp directory
 TEMP_DIR=/tmp/e4p
 """
+        print(f"   Created new .env file with default settings")
     
     # Update or add SSL settings
     ssl_settings = f"""
@@ -258,6 +281,23 @@ APP_PORT={port}
     print(f"   Port: {port}")
     print(f"   Certificate: {cert_path}")
     print(f"   Private Key: {key_path}")
+    
+    # Verify the .env file was written correctly
+    print(f"\n🔍 Verifying .env configuration...")
+    with open(env_file, 'r') as f:
+        content = f.read()
+        if f"DOMAIN={domain}" in content and f"USE_HTTPS=true" in content:
+            print("✅ .env file configured correctly")
+            print("   ✅ USE_HTTPS=true")
+            print(f"   ✅ DOMAIN={domain}")
+            print(f"   ✅ SSL_CERT_PATH={cert_path}")
+            print(f"   ✅ SSL_KEY_PATH={key_path}")
+            print(f"   ✅ APP_PORT={port}")
+        else:
+            print("❌ .env file configuration failed")
+            return False
+    
+    return True
 
 
 def main():
@@ -289,14 +329,25 @@ def main():
         sys.exit(1)
     
     # Update .env file
-    update_env_file(args.domain, args.email, cert_path, key_path, args.port)
+    env_success = update_env_file(args.domain, args.email, cert_path, key_path, args.port)
+    
+    if not env_success:
+        print("❌ Failed to update .env file")
+        sys.exit(1)
     
     print("\n🎉 Certbot SSL setup complete!")
+    print("=" * 50)
     print(f"🌐 Your E4P application will be available at: https://{args.domain}:{args.port}")
+    print("\n📁 Files created:")
+    print(f"   📜 Certificate: {cert_path}")
+    print(f"   🔑 Private Key: {key_path}")
+    print(f"   ⚙️  Configuration: .env")
     print("\n📝 Next steps:")
-    print("1. Make sure your domain points to this server")
-    print("2. Run: python run.py")
-    print("3. Access your secure E4P application!")
+    print("1. ✅ Certificates copied to E4P folder")
+    print("2. ✅ .env file configured with domain and certificate paths")
+    print("3. 🚀 Run: python run.py")
+    print("4. 🌐 Access your secure E4P application!")
+    print("\n💡 The application will automatically use HTTPS with your domain!")
 
 
 if __name__ == "__main__":
