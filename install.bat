@@ -55,30 +55,48 @@ if not exist .env (
     echo ✅ Configuration file created. You can edit .env to customize settings.
 )
 
-REM Ask about HTTPS setup
+REM HTTPS Configuration (Mandatory)
 echo.
-echo 🔐 HTTPS Configuration (Optional)
-echo ==================================
-set /p setup_https="Do you want to set up HTTPS with SSL certificate? (y/N): "
+echo 🔐 HTTPS Configuration (Required)
+echo =================================
+echo E4P requires HTTPS for security. Please provide your domain information:
+echo.
 
-if /i "%setup_https%"=="y" (
-    echo.
-    set /p domain="Enter your domain name (e.g., example.com): "
-    set /p email="Enter your email address for Let's Encrypt: "
+:get_domain
+set /p domain="Enter your domain name (e.g., example.com): "
+if "%domain%"=="" (
+    echo ❌ Domain name is required. Please try again.
+    goto get_domain
+)
+
+:get_email
+set /p email="Enter your email address for Let's Encrypt: "
+if "%email%"=="" (
+    echo ❌ Email address is required. Please try again.
+    goto get_email
+)
+
+echo.
+echo 🔒 Setting up SSL certificate for %domain%...
+python setup_ssl.py --domain "%domain%" --email "%email%"
+
+if errorlevel 1 (
+    echo ⚠️  Let's Encrypt failed, trying self-signed certificate...
+    python setup_ssl.py --domain "%domain%" --email "%email%" --self-signed
     
-    if not "%domain%"=="" if not "%email%"=="" (
-        echo 🔒 Setting up SSL certificate...
-        python setup_ssl.py --domain "%domain%" --email "%email%"
-        
-        if errorlevel 1 (
-            echo ⚠️  HTTPS setup failed, continuing with HTTP...
-        ) else (
-            echo ✅ HTTPS setup complete!
-            echo 🌐 Your application will be available at: https://%domain%
-        )
+    if errorlevel 1 (
+        echo ❌ SSL certificate setup failed. Please check your domain and try again.
+        echo You can run: setup_https_interactive.sh to try again later.
+        pause
+        exit /b 1
     ) else (
-        echo ⚠️  Invalid domain or email, continuing with HTTP...
+        echo ✅ Self-signed certificate setup complete!
+        echo 🌐 Your application will be available at: https://%domain%
+        echo ⚠️  Note: Browsers will show a security warning for self-signed certificates.
     )
+) else (
+    echo ✅ HTTPS setup complete!
+    echo 🌐 Your application will be available at: https://%domain%
 )
 
 REM Create temp directory

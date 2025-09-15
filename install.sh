@@ -119,42 +119,68 @@ if [ ! -f .env ]; then
     echo "✅ Configuration file created. You can edit .env to customize settings."
 fi
 
+# HTTPS Configuration (Mandatory)
+echo ""
+echo "🔐 HTTPS Configuration (Required)"
+echo "================================="
+echo "E4P requires HTTPS for security. Please provide your domain information:"
+echo ""
+
 # Check if running interactively
 if [ -t 0 ]; then
-    # Interactive mode - ask about HTTPS setup
-    echo ""
-    echo "🔐 HTTPS Configuration (Optional)"
-    echo "=================================="
-    read -p "Do you want to set up HTTPS with SSL certificate? (y/N): " setup_https
-
-    if [[ $setup_https =~ ^[Yy]$ ]]; then
-        echo ""
+    # Interactive mode - ask for domain and email
+    while true; do
         read -p "Enter your domain name (e.g., example.com): " domain
-        read -p "Enter your email address for Let's Encrypt: " email
-        
-        if [ -n "$domain" ] && [ -n "$email" ]; then
-            echo "🔒 Setting up SSL certificate..."
-            python3 setup_ssl.py --domain "$domain" --email "$email"
-            
-            if [ $? -eq 0 ]; then
-                echo "✅ HTTPS setup complete!"
-                echo "🌐 Your application will be available at: https://$domain"
-            else
-                echo "⚠️  HTTPS setup failed, continuing with HTTP..."
-            fi
+        if [ -n "$domain" ]; then
+            break
         else
-            echo "⚠️  Invalid domain or email, continuing with HTTP..."
+            echo "❌ Domain name is required. Please try again."
+        fi
+    done
+    
+    while true; do
+        read -p "Enter your email address for Let's Encrypt: " email
+        if [ -n "$email" ]; then
+            break
+        else
+            echo "❌ Email address is required. Please try again."
+        fi
+    done
+    
+    echo ""
+    echo "🔒 Setting up SSL certificate for $domain..."
+    python3 setup_ssl.py --domain "$domain" --email "$email"
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ HTTPS setup complete!"
+        echo "🌐 Your application will be available at: https://$domain"
+    else
+        echo "⚠️  Let's Encrypt failed, trying self-signed certificate..."
+        python3 setup_ssl.py --domain "$domain" --email "$email" --self-signed
+        
+        if [ $? -eq 0 ]; then
+            echo "✅ Self-signed certificate setup complete!"
+            echo "🌐 Your application will be available at: https://$domain"
+            echo "⚠️  Note: Browsers will show a security warning for self-signed certificates."
+        else
+            echo "❌ SSL certificate setup failed. Please check your domain and try again."
+            echo "You can run: ./setup_https_interactive.sh to try again later."
+            exit 1
         fi
     fi
 else
     # Non-interactive mode (piped from curl)
+    echo "❌ HTTPS setup is mandatory but cannot be configured in non-interactive mode."
     echo ""
-    echo "🔐 HTTPS Configuration (Optional)"
-    echo "=================================="
-    echo "⚠️  Running in non-interactive mode."
-    echo "To set up HTTPS later, run: ./setup_https_interactive.sh"
-    echo "Or manually: python3 setup_ssl.py --domain yourdomain.com --email your@email.com"
+    echo "Please run the installation interactively:"
+    echo "1. git clone https://github.com/zZedix/E4P.git"
+    echo "2. cd E4P"
+    echo "3. chmod +x install.sh"
+    echo "4. ./install.sh"
     echo ""
+    echo "Or set up HTTPS manually after installation:"
+    echo "python3 setup_ssl.py --domain yourdomain.com --email your@email.com"
+    exit 1
 fi
 
 # Create temp directory

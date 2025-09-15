@@ -19,7 +19,7 @@ A secure, modern web application for encrypting files with strong cryptography. 
 
 **Linux/macOS:**
 ```bash
-curl -sSL https://raw.githubusercontent.com/zZedix/E4P/main/install.sh | bash
+git clone https://github.com/zZedix/E4P.git && cd E4P && chmod +x install.sh && ./install.sh
 ```
 
 **Windows:**
@@ -27,10 +27,7 @@ curl -sSL https://raw.githubusercontent.com/zZedix/E4P/main/install.sh | bash
 git clone https://github.com/zZedix/E4P.git && cd E4P && install.bat
 ```
 
-**Or download first (all platforms):**
-```bash
-git clone https://github.com/zZedix/E4P.git && cd E4P && chmod +x install.sh && ./install.sh
-```
+**Note**: HTTPS setup is mandatory and requires interactive installation. The `curl | bash` method is not supported due to security requirements.
 
 ### Manual Installation
 
@@ -57,32 +54,22 @@ git clone https://github.com/zZedix/E4P.git && cd E4P && chmod +x install.sh && 
 4. **Access the application**:
    Open http://localhost:8080 in your browser
 
-### HTTPS Setup (Optional)
+### HTTPS Setup (Mandatory)
 
-E4P supports automatic HTTPS setup with SSL certificates:
+E4P requires HTTPS for security. The installation process will automatically set up SSL certificates:
 
-1. **Using Let's Encrypt** (recommended for production):
+1. **During Installation**: The installer will prompt for your domain and email
+2. **Let's Encrypt**: Automatically attempts to get a real SSL certificate
+3. **Self-Signed Fallback**: If Let's Encrypt fails, creates a self-signed certificate
+4. **Manual Setup** (if needed):
    ```bash
    python setup_ssl.py --domain yourdomain.com --email your@email.com
    ```
 
-2. **Using self-signed certificate** (for testing):
-   ```bash
-   python setup_ssl.py --domain localhost --email test@example.com --self-signed
-   ```
-
-3. **Manual HTTPS setup**:
-   ```bash
-   # Edit .env file
-   USE_HTTPS=true
-   DOMAIN=yourdomain.com
-   SSL_CERT_PATH=certs/yourdomain.com.crt
-   SSL_KEY_PATH=certs/yourdomain.com.key
-   EMAIL=your@email.com
-   APP_PORT=443
-   ```
-
-**Note**: For Let's Encrypt, ensure your domain points to this server and port 80 is accessible.
+**Requirements**:
+- Domain name pointing to your server
+- Port 80 accessible for Let's Encrypt validation
+- Valid email address for certificate registration
 
 ### Docker Deployment
 
