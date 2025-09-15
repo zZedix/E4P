@@ -119,30 +119,42 @@ if [ ! -f .env ]; then
     echo "✅ Configuration file created. You can edit .env to customize settings."
 fi
 
-# Ask about HTTPS setup
-echo ""
-echo "🔐 HTTPS Configuration (Optional)"
-echo "=================================="
-read -p "Do you want to set up HTTPS with SSL certificate? (y/N): " setup_https
-
-if [[ $setup_https =~ ^[Yy]$ ]]; then
+# Check if running interactively
+if [ -t 0 ]; then
+    # Interactive mode - ask about HTTPS setup
     echo ""
-    read -p "Enter your domain name (e.g., example.com): " domain
-    read -p "Enter your email address for Let's Encrypt: " email
-    
-    if [ -n "$domain" ] && [ -n "$email" ]; then
-        echo "🔒 Setting up SSL certificate..."
-        python3 setup_ssl.py --domain "$domain" --email "$email"
+    echo "🔐 HTTPS Configuration (Optional)"
+    echo "=================================="
+    read -p "Do you want to set up HTTPS with SSL certificate? (y/N): " setup_https
+
+    if [[ $setup_https =~ ^[Yy]$ ]]; then
+        echo ""
+        read -p "Enter your domain name (e.g., example.com): " domain
+        read -p "Enter your email address for Let's Encrypt: " email
         
-        if [ $? -eq 0 ]; then
-            echo "✅ HTTPS setup complete!"
-            echo "🌐 Your application will be available at: https://$domain"
+        if [ -n "$domain" ] && [ -n "$email" ]; then
+            echo "🔒 Setting up SSL certificate..."
+            python3 setup_ssl.py --domain "$domain" --email "$email"
+            
+            if [ $? -eq 0 ]; then
+                echo "✅ HTTPS setup complete!"
+                echo "🌐 Your application will be available at: https://$domain"
+            else
+                echo "⚠️  HTTPS setup failed, continuing with HTTP..."
+            fi
         else
-            echo "⚠️  HTTPS setup failed, continuing with HTTP..."
+            echo "⚠️  Invalid domain or email, continuing with HTTP..."
         fi
-    else
-        echo "⚠️  Invalid domain or email, continuing with HTTP..."
     fi
+else
+    # Non-interactive mode (piped from curl)
+    echo ""
+    echo "🔐 HTTPS Configuration (Optional)"
+    echo "=================================="
+    echo "⚠️  Running in non-interactive mode."
+    echo "To set up HTTPS later, run: ./setup_https_interactive.sh"
+    echo "Or manually: python3 setup_ssl.py --domain yourdomain.com --email your@email.com"
+    echo ""
 fi
 
 # Create temp directory
