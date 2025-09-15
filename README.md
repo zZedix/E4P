@@ -13,11 +13,28 @@ A secure, modern web application for encrypting files with strong cryptography. 
 
 ## 🚀 Quick Start
 
-### Local Development
+### One-Line Installation & Run
+
+**Linux/macOS:**
+```bash
+curl -sSL https://raw.githubusercontent.com/zZedix/E4P/main/install.sh | bash
+```
+
+**Windows:**
+```cmd
+git clone https://github.com/zZedix/E4P.git && cd E4P && install.bat
+```
+
+**Or download first (all platforms):**
+```bash
+git clone https://github.com/zZedix/E4P.git && cd E4P && chmod +x install.sh && ./install.sh
+```
+
+### Manual Installation
 
 1. **Clone and setup**:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/zZedix/E4P.git
    cd E4P
    python -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
@@ -32,7 +49,7 @@ A secure, modern web application for encrypting files with strong cryptography. 
 
 3. **Run the application**:
    ```bash
-   uvicorn app.main:app --reload --port 8080
+   python run.py
    ```
 
 4. **Access the application**:
