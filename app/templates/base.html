@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Encryption 4 People (E4P){% endblock %}</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/app.css">
+    
+    <!-- Security headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; img-src 'self' data:; font-src 'self' https://cdn.tailwindcss.com;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    
+    <!-- Language support -->
+    <script>
+        // Language switching functionality
+        let currentLang = localStorage.getItem('e4p_lang') || 'en';
+        
+        const translations = {
+            en: {
+                title: "Encryption 4 People (E4P)",
+                subtitle: "Secure file encryption with modern cryptography",
+                encrypt: "Encrypt Files",
+                decrypt: "Decrypt Files",
+                language: "Language",
+                english: "English",
+                persian: "فارسی",
+                home: "Home",
+                about: "About",
+                security: "Security",
+                maxFileSize: "Max file size: {{ max_file_size }}MB",
+                supportedAlgorithms: "Supported algorithms: AES-256-GCM, XChaCha20-Poly1305",
+                footer: "© 2024 Encryption 4 People. Secure file encryption with modern cryptography."
+            },
+            fa: {
+                title: "رمزگذاری برای مردم (E4P)",
+                subtitle: "رمزگذاری امن فایل‌ها با رمزنگاری مدرن",
+                encrypt: "رمزگذاری فایل‌ها",
+                decrypt: "رمزگشایی فایل‌ها",
+                language: "زبان",
+                english: "English",
+                persian: "فارسی",
+                home: "خانه",
+                about: "درباره",
+                security: "امنیت",
+                maxFileSize: "حداکثر اندازه فایل: {{ max_file_size }}MB",
+                supportedAlgorithms: "الگوریتم‌های پشتیبانی شده: AES-256-GCM, XChaCha20-Poly1305",
+                footer: "© ۱۴۰۳ رمزگذاری برای مردم. رمزگذاری امن فایل‌ها با رمزنگاری مدرن."
+            }
+        };
+        
+        function switchLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('e4p_lang', lang);
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
+            updateTranslations();
+        }
+        
+        function updateTranslations() {
+            const t = translations[currentLang];
+            document.title = t.title;
+            
+            // Update elements with data-translate attribute
+            document.querySelectorAll('[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                if (t[key]) {
+                    el.textContent = t[key];
+                }
+            });
+        }
+        
+        // Initialize language on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.documentElement.lang = currentLang;
+            document.documentElement.dir = currentLang === 'fa' ? 'rtl' : 'ltr';
+            updateTranslations();
+        });
+    </script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white dark:bg-gray-800 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex-shrink-0 flex items-center">
+                        <div class="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">E4P</span>
+                        </div>
+                        <span class="ml-2 text-xl font-bold" data-translate="title">Encryption 4 People (E4P)</span>
+                    </a>
+                </div>
+                
+                <div class="flex items-center space-x-4 rtl:space-x-reverse">
+                    <a href="/" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700" data-translate="home">Home</a>
+                    <a href="/decrypt" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700" data-translate="decrypt">Decrypt</a>
+                    
+                    <!-- Language Switcher -->
+                    <div class="relative">
+                        <select id="language-selector" onchange="switchLanguage(this.value)" class="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 text-sm">
+                            <option value="en" data-translate="english">English</option>
+                            <option value="fa" data-translate="persian">فارسی</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Dark mode toggle -->
+                    <button id="dark-mode-toggle" class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <svg id="sun-icon" class="h-5 w-5 hidden dark:block" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <svg id="moon-icon" class="h-5 w-5 block dark:hidden" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+            <div class="text-center text-sm text-gray-500 dark:text-gray-400">
+                <p data-translate="footer">© 2024 Encryption 4 People. Secure file encryption with modern cryptography.</p>
+                <p class="mt-2" data-translate="maxFileSize">Max file size: {{ max_file_size }}MB</p>
+                <p class="mt-1" data-translate="supportedAlgorithms">Supported algorithms: AES-256-GCM, XChaCha20-Poly1305</p>
+                <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <p class="text-xs">
+                        Made with ❤️ by 
+                        <a href="https://github.com/zZedix" 
+                           target="_blank" 
+                           rel="noopener noreferrer"
+                           class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors">
+                            zZedix
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
