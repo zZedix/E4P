@@ -160,6 +160,33 @@ def update_env_file(domain: str, email: str, cert_path: str, key_path: str, port
     if env_file.exists():
         with open(env_file, 'r') as f:
             env_content = f.read()
+    else:
+        # Create basic .env if it doesn't exist
+        env_content = """APP_HOST=0.0.0.0
+APP_PORT=8080
+MAX_FILE_SIZE_MB=2048
+MAX_CONCURRENCY=2
+
+# Argon2id
+ARGON2_MEMORY_MB=256
+ARGON2_TIME_COST=3
+ARGON2_PARALLELISM=2
+ARGON2_KEY_LEN=32
+
+# Cleanup
+CLEAN_INTERVAL_MIN=5
+FILE_TTL_MIN=60
+
+# Tokens
+DOWNLOAD_TOKEN_TTL_S=900
+SECRET_KEY=te8FqI6dbr4e8qzojgWNPAyvnPF5kdNoV10rioRcq2Q
+
+# Security
+RATE_LIMIT_REQUESTS_PER_MINUTE=60
+
+# Temp directory
+TEMP_DIR=/tmp/e4p
+"""
     
     # Update or add SSL settings
     ssl_settings = f"""
@@ -178,7 +205,7 @@ APP_PORT={port}
     skip_until_newline = False
     
     for line in lines:
-        if any(line.strip().startswith(setting) for setting in ['USE_HTTPS', 'DOMAIN', 'SSL_CERT_PATH', 'SSL_KEY_PATH', 'EMAIL']):
+        if any(line.strip().startswith(setting) for setting in ['USE_HTTPS', 'DOMAIN', 'SSL_CERT_PATH', 'SSL_KEY_PATH', 'EMAIL', 'APP_PORT']):
             skip_until_newline = True
             continue
         elif skip_until_newline and line.strip() == '':
@@ -195,6 +222,22 @@ APP_PORT={port}
         f.write(new_content)
     
     print(f"✅ Updated .env file with SSL configuration")
+    print(f"   Domain: {domain}")
+    print(f"   Port: {port}")
+    print(f"   Certificate: {cert_path}")
+    print(f"   Private Key: {key_path}")
+    
+    # Verify the .env file was written correctly
+    print(f"\n🔍 Verifying .env configuration...")
+    with open(env_file, 'r') as f:
+        content = f.read()
+        if f"DOMAIN={domain}" in content and f"USE_HTTPS=true" in content:
+            print("✅ .env file configured correctly")
+        else:
+            print("❌ .env file configuration failed")
+            return False
+    
+    return True
 
 
 def main():

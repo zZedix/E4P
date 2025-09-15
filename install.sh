@@ -203,6 +203,17 @@ if [ -t 0 ]; then
             exit 1
         fi
     fi
+    
+    # Verify HTTPS configuration
+    echo ""
+    echo "🔍 Verifying HTTPS configuration..."
+    python3 test_https.py
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ HTTPS configuration verified!"
+    else
+        echo "⚠️  HTTPS configuration verification failed, but continuing..."
+    fi
 else
     # Non-interactive mode (piped from curl)
     echo "❌ HTTPS setup is mandatory but cannot be configured in non-interactive mode."
