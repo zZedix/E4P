@@ -23,7 +23,7 @@ This project draws inspiration from the **Cypherpunks movement** and the **E4M s
 
 **Linux/macOS (Recommended):**
 ```bash
-curl -sSL https://raw.githubusercontent.com/zZedix/E4P/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/zZedix/E4P/dev/install.sh | bash
 ```
 
 The installer will:
