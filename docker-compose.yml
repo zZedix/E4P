@@ -3,32 +3,83 @@ version: '3.8'
 services:
   e4p:
     build: .
-    ports:
-      - "8080:8080"
+    env_file:
+      - .env
     environment:
-      - APP_HOST=0.0.0.0
-      - APP_PORT=8080
-      - MAX_FILE_SIZE_MB=2048
-      - MAX_CONCURRENCY=2
-      - ARGON2_MEMORY_MB=256
-      - ARGON2_TIME_COST=3
-      - ARGON2_PARALLELISM=2
-      - ARGON2_KEY_LEN=32
-      - CLEAN_INTERVAL_MIN=5
-      - FILE_TTL_MIN=60
-      - DOWNLOAD_TOKEN_TTL_S=900
-      - SECRET_KEY=${SECRET_KEY:-change_me_to_random_base64}
-      - RATE_LIMIT_REQUESTS_PER_MINUTE=60
+      APP_HOST: ${APP_HOST:-0.0.0.0}
+      APP_PORT: ${APP_PORT:-8080}
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
+    command: >-
+      gunicorn app.main:app -k uvicorn.workers.UvicornWorker
+      --bind 0.0.0.0:${APP_PORT:-8080}
+      --workers ${GUNICORN_WORKERS:-2}
+    ports:
+      - "${APP_HTTP_PORT:-8080}:${APP_PORT:-8080}"
     volumes:
       - e4p_temp:/tmp/e4p
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8080/health')"]
+      test:
+        - CMD-SHELL
+        - "python -c \"import urllib.request as r; r.urlopen('http://localhost:${APP_PORT:-8080}/health')\""
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
 
+  nginx:
+    image: nginx:1.25-alpine
+    depends_on:
+      - e4p
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - ./nginx/entrypoint.sh:/entrypoint.sh:ro
+      - certbot-conf:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    environment:
+      DOMAIN: ${DOMAIN:-_}
+      ENABLE_SSL: ${ENABLE_SSL:-false}
+      APP_UPSTREAM: http://e4p:${APP_PORT:-8080}
+      NGINX_RELOAD_INTERVAL: ${NGINX_RELOAD_INTERVAL:-43200}
+    entrypoint:
+      - /bin/sh
+      - /entrypoint.sh
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+    profiles:
+      - https
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - certbot-conf:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    profiles:
+      - https
+
+  certbot-renew:
+    image: certbot/certbot:latest
+    depends_on:
+      - nginx
+    volumes:
+      - certbot-conf:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        trap exit TERM;
+        while :; do
+          certbot renew --webroot -w /var/www/certbot --quiet || true;
+          sleep 12h & wait $${!};
+        done
+    restart: unless-stopped
+    profiles:
+      - https
+
 volumes:
   e4p_temp:
-    driver: local
+  certbot-conf:
+  certbot-www:
