@@ -2,6 +2,10 @@
 
 A secure, modern web application for encrypting files with strong cryptography. E4P provides client-side encryption using industry-standard algorithms and key derivation functions, ensuring your files remain secure even if the server is compromised.
 
+## 🌟 Inspiration
+
+This project draws inspiration from the **Cypherpunks movement** and the **E4M software**, championing strong privacy and security for everyone on the Internet. We believe that encryption should be accessible to all, not just those with technical expertise.
+
 ## 🔐 Security Features
 
 - **Strong Encryption**: AES-256-GCM and XChaCha20-Poly1305 algorithms
@@ -317,6 +321,17 @@ e4p/
 4. Add tests for new functionality
 5. Ensure all tests pass
 6. Submit a pull request
+
+## 💰 Donations
+
+If you find E4P useful and want to support its development, consider making a donation:
+
+**Cryptocurrency Donations:**
+- **Tron (TRX)**: `TD43B2eT7JC8upacMarcmBBGFkjy75QJHK`
+- **USDT (BEP20)**: `0x8Fb2c4AF74e072CefC14A4E9927a1F86F1cd492c`
+- **TON**: `UQAFTGSc2YRNGQwwuTyD0Q-eB7pB0BNG0yvx5jVYAJWFu-y6`
+
+Your support helps us maintain and improve E4P, ensuring it remains free and accessible to everyone who values their privacy and security.
 
 ## 📄 License
 
