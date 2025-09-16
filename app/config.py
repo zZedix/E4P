@@ -12,13 +12,6 @@ class Settings(BaseSettings):
     app_host: str = "0.0.0.0"
     app_port: int = 8080
     
-    # HTTPS settings
-    use_https: bool = False
-    domain: Optional[str] = None
-    ssl_cert_path: Optional[str] = None
-    ssl_key_path: Optional[str] = None
-    email: Optional[str] = None  # For Let's Encrypt registration
-    
     # File handling
     max_file_size_mb: int = 2048
     max_concurrency: int = 2

@@ -10,8 +10,6 @@ A secure, modern web application for encrypting files with strong cryptography. 
 - **Streaming Encryption**: Handles large files without memory issues
 - **Authenticated Encryption**: Prevents tampering and ensures integrity
 - **Secure Download Tokens**: Time-limited, HMAC-signed download links
-- **HTTPS Support**: Automatic SSL/TLS certificate generation with Let's Encrypt
-- **Self-Signed Certificates**: For testing and development environments
 
 ## 🚀 Quick Start
 
@@ -27,7 +25,6 @@ git clone https://github.com/zZedix/E4P.git && cd E4P && chmod +x install.sh && 
 git clone https://github.com/zZedix/E4P.git && cd E4P && install.bat
 ```
 
-**Note**: HTTPS setup is mandatory and requires interactive installation. The `curl | bash` method is not supported due to security requirements.
 
 ### Manual Installation
 
@@ -51,35 +48,8 @@ git clone https://github.com/zZedix/E4P.git && cd E4P && install.bat
    python run.py
    ```
 
-4. **Setup HTTPS** (mandatory):
-   ```bash
-   python setup_certbot.py --domain yourdomain.com --email your@email.com
-   ```
-
-5. **Run the application**:
-   ```bash
-   python run.py
-   ```
-
-6. **Access the application**:
-   Open https://yourdomain.com in your browser
-
-### HTTPS Setup (Mandatory)
-
-E4P requires HTTPS for security. The installation process will automatically set up SSL certificates:
-
-1. **During Installation**: The installer will prompt for your domain and email
-2. **Let's Encrypt**: Automatically attempts to get a real SSL certificate
-3. **Self-Signed Fallback**: If Let's Encrypt fails, creates a self-signed certificate
-4. **Manual Setup** (if needed):
-   ```bash
-   python setup_ssl.py --domain yourdomain.com --email your@email.com
-   ```
-
-**Requirements**:
-- Domain name pointing to your server
-- Port 80 accessible for Let's Encrypt validation
-- Valid email address for certificate registration
+4. **Access the application**:
+   Open http://localhost:8080 in your browser
 
 ### Docker Deployment
 
@@ -150,11 +120,6 @@ E4P uses a custom binary container format with the following structure:
 |----------|---------|-------------|
 | `APP_HOST` | `0.0.0.0` | Server host |
 | `APP_PORT` | `8080` | Server port |
-| `USE_HTTPS` | `true` | Enable HTTPS (mandatory) |
-| `DOMAIN` | `None` | Domain name for SSL certificate |
-| `SSL_CERT_PATH` | `None` | Path to SSL certificate file |
-| `SSL_KEY_PATH` | `None` | Path to SSL private key file |
-| `EMAIL` | `None` | Email for Let's Encrypt registration |
 | `MAX_FILE_SIZE_MB` | `2048` | Maximum file size in MB |
 | `MAX_CONCURRENCY` | `2` | Maximum concurrent encryption tasks |
 | `ARGON2_MEMORY_MB` | `256` | Argon2id memory cost in MB |

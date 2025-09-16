@@ -90,59 +90,6 @@ if ! command -v pip3 &> /dev/null; then
     echo "✅ pip3 installed successfully!"
 fi
 
-# Install SSL dependencies for HTTPS setup
-echo "🔒 Installing SSL dependencies..."
-if command -v apt-get &> /dev/null; then
-    # Ubuntu/Debian
-    echo "Installing certbot and OpenSSL via apt-get..."
-    sudo apt-get install -y certbot openssl python3-openssl python3-cryptography
-    
-    # Fix OpenSSL compatibility issues
-    echo "🔧 Fixing OpenSSL compatibility issues..."
-    sudo apt-get install --reinstall python3-openssl python3-cryptography -y
-    pip3 install --upgrade pyOpenSSL
-    
-    # Test OpenSSL compatibility
-    echo "🧪 Testing OpenSSL compatibility..."
-    if ! python3 -c "from OpenSSL import crypto; print('OpenSSL works')" 2>/dev/null; then
-        echo "⚠️  OpenSSL compatibility issue detected, trying alternative installation..."
-        
-        # Try installing certbot via snap as fallback
-        if command -v snap &> /dev/null; then
-            echo "Installing certbot via snap..."
-            sudo snap install --classic certbot
-            sudo ln -sf /snap/bin/certbot /usr/bin/certbot
-        else
-            echo "Installing certbot via pip..."
-            pip3 install certbot
-        fi
-    fi
-    
-elif command -v yum &> /dev/null; then
-    # CentOS/RHEL
-    sudo yum install -y certbot openssl python3-pyOpenSSL python3-cryptography
-    pip3 install --upgrade pyOpenSSL
-elif command -v dnf &> /dev/null; then
-    # Fedora
-    sudo dnf install -y certbot openssl python3-pyOpenSSL python3-cryptography
-    pip3 install --upgrade pyOpenSSL
-elif command -v brew &> /dev/null; then
-    # macOS
-    brew install certbot openssl
-    pip3 install --upgrade pyOpenSSL
-else
-    echo "⚠️  Could not install SSL dependencies automatically. You may need to install certbot and openssl manually for HTTPS support."
-fi
-
-# Final OpenSSL compatibility test
-echo "🔍 Final OpenSSL compatibility test..."
-if python3 -c "from OpenSSL import crypto; print('✅ OpenSSL works')" 2>/dev/null; then
-    echo "✅ OpenSSL compatibility confirmed!"
-else
-    echo "❌ OpenSSL compatibility issues remain. HTTPS setup may fail."
-    echo "   You can try running: ./fix_openssl.sh after installation"
-fi
-
 # Install dependencies
 echo "📦 Installing Python dependencies..."
 pip3 install -r requirements.txt
@@ -154,89 +101,6 @@ if [ ! -f .env ]; then
     echo "✅ Configuration file created. You can edit .env to customize settings."
 fi
 
-# HTTPS Configuration (Mandatory)
-echo ""
-echo "🔐 HTTPS Configuration (Required)"
-echo "================================="
-echo "E4P requires HTTPS for security. Please provide your domain information:"
-echo ""
-
-# Check if running interactively
-if [ -t 0 ]; then
-    # Interactive mode - ask for domain and email
-    while true; do
-        read -p "Enter your domain name (e.g., example.com): " domain
-        if [ -n "$domain" ]; then
-            break
-        else
-            echo "❌ Domain name is required. Please try again."
-        fi
-    done
-    
-    while true; do
-        read -p "Enter your email address for Let's Encrypt: " email
-        if [ -n "$email" ]; then
-            break
-        else
-            echo "❌ Email address is required. Please try again."
-        fi
-    done
-    
-    echo ""
-    echo "🔒 Setting up SSL certificate for $domain using certbot..."
-    python3 setup_certbot.py --domain "$domain" --email "$email"
-    
-    if [ $? -eq 0 ]; then
-        echo "✅ Certbot SSL setup complete!"
-        echo "🌐 Your application will be available at: https://$domain"
-    else
-        echo "⚠️  Certbot failed, trying fallback SSL setup..."
-        python3 setup_ssl.py --domain "$domain" --email "$email"
-        
-        if [ $? -eq 0 ]; then
-            echo "✅ Fallback SSL setup complete!"
-            echo "🌐 Your application will be available at: https://$domain"
-        else
-            echo "⚠️  Let's Encrypt failed, trying self-signed certificate..."
-            python3 setup_ssl.py --domain "$domain" --email "$email" --self-signed
-            
-            if [ $? -eq 0 ]; then
-                echo "✅ Self-signed certificate setup complete!"
-                echo "🌐 Your application will be available at: https://$domain"
-                echo "⚠️  Note: Browsers will show a security warning for self-signed certificates."
-            else
-                echo "❌ SSL certificate setup failed. Please check your domain and try again."
-                echo "You can run: ./setup_https_interactive.sh to try again later."
-                exit 1
-            fi
-        fi
-    fi
-    
-    # Verify HTTPS configuration
-    echo ""
-    echo "🔍 Verifying HTTPS configuration..."
-    python3 test_https.py
-    
-    if [ $? -eq 0 ]; then
-        echo "✅ HTTPS configuration verified!"
-    else
-        echo "⚠️  HTTPS configuration verification failed, but continuing..."
-    fi
-else
-    # Non-interactive mode (piped from curl)
-    echo "❌ HTTPS setup is mandatory but cannot be configured in non-interactive mode."
-    echo ""
-    echo "Please run the installation interactively:"
-    echo "1. git clone https://github.com/zZedix/E4P.git"
-    echo "2. cd E4P"
-    echo "3. chmod +x install.sh"
-    echo "4. ./install.sh"
-    echo ""
-    echo "Or set up HTTPS manually after installation:"
-    echo "python3 setup_ssl.py --domain yourdomain.com --email your@email.com"
-    exit 1
-fi
-
 # Create temp directory
 mkdir -p /tmp/e4p
 
@@ -244,16 +108,7 @@ mkdir -p /tmp/e4p
 echo ""
 echo "🚀 Starting E4P server..."
 echo "=========================================="
-
-# Check if HTTPS is enabled
-if grep -q "USE_HTTPS=true" .env 2>/dev/null; then
-    domain=$(grep "DOMAIN=" .env | cut -d'=' -f2)
-    port=$(grep "APP_PORT=" .env | cut -d'=' -f2)
-    echo "🔒 HTTPS enabled - Access at: https://$domain:$port"
-else
-    echo "🌐 HTTP enabled - Access at: http://localhost:8080"
-fi
-
+echo "🌐 HTTP enabled - Access at: http://localhost:8080"
 echo "Press Ctrl+C to stop the server"
 echo "=========================================="
 
