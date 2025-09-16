@@ -1,8 +1,7 @@
 """Configuration settings for E4P application."""
 
 import os
-from typing import Optional
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -36,9 +35,11 @@ class Settings(BaseSettings):
     # Temp directory
     temp_dir: str = "/tmp/e4p"
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
 
 # Global settings instance
