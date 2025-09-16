@@ -95,10 +95,10 @@ E4P clean       # Clean temporary files
 1. **Using Docker Compose** (recommended):
    ```bash
    # Generate a secure secret key
-   openssl rand -base64 32
+   SECRET_KEY=$(openssl rand -base64 32)
    
    # Set the secret key in .env
-   echo "SECRET_KEY=your_generated_secret_key" > .env
+   echo "SECRET_KEY=$SECRET_KEY" > .env
    
    # Start the application
    docker-compose up -d
@@ -106,14 +106,32 @@ E4P clean       # Clean temporary files
 
 2. **Using Docker directly**:
    ```bash
+   # Generate a secure secret key
+   SECRET_KEY=$(openssl rand -base64 32)
+   
    # Build the image
    docker build -t e4p .
    
+   # Create volume for temporary files
+   docker volume create e4p_temp
+   
    # Run the container
-   docker run -p 8080:8080 \
-     -e SECRET_KEY=your_generated_secret_key \
+   docker run -d \
+     --name e4p-app \
+     -p 8080:8080 \
+     -e SECRET_KEY="$SECRET_KEY" \
      -v e4p_temp:/tmp/e4p \
+     --restart unless-stopped \
      e4p
+   ```
+
+3. **Using CLI (Alternative)**:
+   ```bash
+   # Install and start with CLI
+   curl -sSL https://raw.githubusercontent.com/zZedix/E4P/main/install.sh | bash
+   
+   # Or if already installed
+   E4P start
    ```
 
 ## 📁 E4P File Format

@@ -95,10 +95,10 @@ E4P clean       # پاک کردن فایل‌های موقت
 1. **استفاده از Docker Compose** (توصیه شده):
    ```bash
    # تولید کلید مخفی امن
-   openssl rand -base64 32
+   SECRET_KEY=$(openssl rand -base64 32)
    
    # تنظیم کلید مخفی در .env
-   echo "SECRET_KEY=your_generated_secret_key" > .env
+   echo "SECRET_KEY=$SECRET_KEY" > .env
    
    # راه‌اندازی برنامه
    docker-compose up -d
@@ -106,14 +106,32 @@ E4P clean       # پاک کردن فایل‌های موقت
 
 2. **استفاده از Docker مستقیماً**:
    ```bash
+   # تولید کلید مخفی امن
+   SECRET_KEY=$(openssl rand -base64 32)
+   
    # ساخت تصویر
    docker build -t e4p .
    
+   # ایجاد حجم برای فایل‌های موقت
+   docker volume create e4p_temp
+   
    # اجرای کانتینر
-   docker run -p 8080:8080 \
-     -e SECRET_KEY=your_generated_secret_key \
+   docker run -d \
+     --name e4p-app \
+     -p 8080:8080 \
+     -e SECRET_KEY="$SECRET_KEY" \
      -v e4p_temp:/tmp/e4p \
+     --restart unless-stopped \
      e4p
+   ```
+
+3. **استفاده از CLI (جایگزین)**:
+   ```bash
+   # نصب و راه‌اندازی با CLI
+   curl -sSL https://raw.githubusercontent.com/zZedix/E4P/main/install.sh | bash
+   
+   # یا اگر قبلاً نصب شده
+   E4P start
    ```
 
 ## 📁 فرمت فایل E4P
