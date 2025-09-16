@@ -2,6 +2,8 @@
 
 A secure, modern web application for encrypting files with strong cryptography. E4P provides client-side encryption using industry-standard algorithms and key derivation functions, ensuring your files remain secure even if the server is compromised.
 
+**📖 [README in Persian (فارسی)](README.fa.md)**
+
 ## 🌟 Inspiration
 
 This project draws inspiration from the **Cypherpunks movement** and the **E4M software**, championing strong privacy and security for everyone on the Internet. We believe that encryption should be accessible to all, not just those with technical expertise.
