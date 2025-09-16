@@ -1,16 +1,18 @@
 #!/bin/bash
 
 # E4P - Encryption 4 People - One Line Installation Script
-# This script installs and runs the E4P secure file encryption web application
+# Usage: curl -sSL https://raw.githubusercontent.com/zZedix/E4P/main/install.sh | bash
+
+set -e  # Exit on any error
 
 echo "🔐 Installing Encryption 4 People (E4P)..."
 echo "=========================================="
 
-# Check if git is installed, install if missing
-if ! command -v git &> /dev/null; then
-    echo "📦 git not found, installing..."
+# Function to install git
+install_git() {
+    echo "📦 Installing git..."
     if command -v apt-get &> /dev/null; then
-        sudo apt-get update
+        sudo apt-get update -qq
         sudo apt-get install -y git
     elif command -v yum &> /dev/null; then
         sudo yum install -y git
@@ -22,55 +24,25 @@ if ! command -v git &> /dev/null; then
         echo "❌ Cannot install git automatically. Please install git manually."
         exit 1
     fi
-fi
+}
 
-# Clone the repository if not already present
-if [ ! -d "E4P" ]; then
-    echo "📥 Cloning E4P repository..."
-    git clone https://github.com/zZedix/E4P.git
-    if [ $? -ne 0 ]; then
-        echo "❌ Failed to clone repository. Please check your internet connection."
-        exit 1
-    fi
-fi
-
-# Change to the E4P directory
-cd E4P
-
-# Check if Python 3 is installed
-if ! command -v python3 &> /dev/null; then
-    echo "❌ Python 3 is required but not installed. Please install Python 3 first."
-    exit 1
-fi
-
-# Check if pip3 is installed, install if missing
-if ! command -v pip3 &> /dev/null; then
-    echo "📦 pip3 not found, installing..."
-    
-    # Detect OS and install pip3
+# Function to install pip3
+install_pip3() {
+    echo "📦 Installing pip3..."
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        # Linux
         if command -v apt-get &> /dev/null; then
-            # Ubuntu/Debian
-            echo "Installing pip3 via apt-get..."
-            sudo apt-get update
+            sudo apt-get update -qq
             sudo apt-get install -y python3-pip python3-venv
         elif command -v yum &> /dev/null; then
-            # CentOS/RHEL
-            echo "Installing pip3 via yum..."
             sudo yum install -y python3-pip python3-venv
         elif command -v dnf &> /dev/null; then
-            # Fedora
-            echo "Installing pip3 via dnf..."
             sudo dnf install -y python3-pip python3-venv
         else
             echo "❌ Cannot install pip3 automatically. Please install pip3 manually."
             exit 1
         fi
     elif [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS
         if command -v brew &> /dev/null; then
-            echo "Installing pip3 via Homebrew..."
             brew install python3
         else
             echo "❌ Homebrew not found. Please install pip3 manually or install Homebrew first."
@@ -80,26 +52,44 @@ if ! command -v pip3 &> /dev/null; then
         echo "❌ Unsupported operating system. Please install pip3 manually."
         exit 1
     fi
-    
-    # Verify pip3 installation
-    if ! command -v pip3 &> /dev/null; then
-        echo "❌ Failed to install pip3. Please install it manually."
-        exit 1
-    fi
-    
-    echo "✅ pip3 installed successfully!"
+}
+
+# Check if git is installed, install if missing
+if ! command -v git &> /dev/null; then
+    install_git
 fi
+
+# Check if Python 3 is installed
+if ! command -v python3 &> /dev/null; then
+    echo "❌ Python 3 is required but not installed. Please install Python 3 first."
+    echo "   On Ubuntu/Debian: sudo apt-get install python3"
+    echo "   On CentOS/RHEL: sudo yum install python3"
+    echo "   On Fedora: sudo dnf install python3"
+    echo "   On macOS: brew install python3"
+    exit 1
+fi
+
+# Check if pip3 is installed, install if missing
+if ! command -v pip3 &> /dev/null; then
+    install_pip3
+fi
+
+# Create a temporary directory for installation
+TEMP_DIR=$(mktemp -d)
+cd "$TEMP_DIR"
+
+# Clone the repository
+echo "📥 Cloning E4P repository..."
+git clone https://github.com/zZedix/E4P.git
+cd E4P
 
 # Install dependencies
 echo "📦 Installing Python dependencies..."
-pip3 install -r requirements.txt
+pip3 install -r requirements.txt --quiet
 
-# Create .env file if it doesn't exist
-if [ ! -f .env ]; then
-    echo "⚙️  Creating configuration file..."
-    cp env.example .env
-    echo "✅ Configuration file created. You can edit .env to customize settings."
-fi
+# Create .env file
+echo "⚙️  Creating configuration file..."
+cp env.example .env
 
 # Create temp directory
 mkdir -p /tmp/e4p
@@ -112,4 +102,5 @@ echo "🌐 HTTP enabled - Access at: http://localhost:8080"
 echo "Press Ctrl+C to stop the server"
 echo "=========================================="
 
+# Run the application
 python3 run.py

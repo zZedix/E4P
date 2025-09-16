@@ -15,15 +15,17 @@ A secure, modern web application for encrypting files with strong cryptography. 
 
 ### One-Line Installation & Run
 
-**Linux/macOS:**
+**Linux/macOS (Recommended):**
 ```bash
-git clone https://github.com/zZedix/E4P.git && cd E4P && chmod +x install.sh && ./install.sh
+curl -sSL https://raw.githubusercontent.com/zZedix/E4P/main/install.sh | bash
 ```
 
 **Windows:**
 ```cmd
 git clone https://github.com/zZedix/E4P.git && cd E4P && install.bat
 ```
+
+**Note**: The one-line installation automatically installs all dependencies and starts the server. No manual configuration required!
 
 
 ### Manual Installation
