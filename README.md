@@ -26,6 +26,12 @@ This project draws inspiration from the **Cypherpunks movement** and the **E4M s
 curl -sSL https://raw.githubusercontent.com/zZedix/E4P/main/install.sh | bash
 ```
 
+The installer will:
+
+- Ask for an optional domain name so you can immediately enable HTTPS (via Docker + Let's Encrypt).
+- Create a reusable installation under `~/.e4p` and link the `E4P` CLI into your `$PATH`.
+- Start the app in HTTP mode automatically if you skip the HTTPS deployment.
+
 **Windows:**
 ```cmd
 git clone https://github.com/zZedix/E4P.git && cd E4P && install.bat
