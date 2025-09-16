@@ -2,11 +2,44 @@
 # E4P CLI Wrapper Script
 # This script provides easy access to the E4P CLI from anywhere
 
-# Get the directory where this script is located
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+set -euo pipefail
 
-# Change to the E4P directory
-cd "$SCRIPT_DIR"
+resolve_path() {
+    local path="$1"
+    while [ -L "$path" ]; do
+        local dir
+        dir="$(cd "$(dirname "$path")" && pwd)"
+        path="$(readlink "$path")"
+        if [[ "$path" != /* ]]; then
+            path="$dir/$path"
+        fi
+    done
+    echo "$path"
+}
 
-# Run the Python CLI
-python3 e4p_cli.py "$@"
+SCRIPT_PATH="$(resolve_path "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+
+CANDIDATE_DIRS=(
+    "$SCRIPT_DIR"
+    "$HOME/.e4p"
+    "$HOME/E4P"
+    "/opt/e4p"
+)
+
+REPO_DIR=""
+for dir in "${CANDIDATE_DIRS[@]}"; do
+    if [ -f "$dir/e4p_cli.py" ]; then
+        REPO_DIR="$dir"
+        break
+    fi
+done
+
+if [ -z "$REPO_DIR" ]; then
+    echo "❌ Could not locate e4p_cli.py. Please reinstall E4P." >&2
+    exit 1
+fi
+
+cd "$REPO_DIR"
+
+exec python3 e4p_cli.py "$@"
