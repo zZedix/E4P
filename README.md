@@ -92,47 +92,102 @@ E4P clean       # Clean temporary files
 
 ### Docker Deployment
 
-1. **Using Docker Compose** (recommended):
-   ```bash
-   # Generate a secure secret key
-   SECRET_KEY=$(openssl rand -base64 32)
-   
-   # Set the secret key in .env
-   echo "SECRET_KEY=$SECRET_KEY" > .env
-   
-   # Start the application
-   docker-compose up -d
-   ```
+#### Automated setup (recommended)
 
-2. **Using Docker directly**:
-   ```bash
-   # Generate a secure secret key
-   SECRET_KEY=$(openssl rand -base64 32)
-   
-   # Build the image
-   docker build -t e4p .
-   
-   # Create volume for temporary files
-   docker volume create e4p_temp
-   
-   # Run the container
-   docker run -d \
-     --name e4p-app \
-     -p 8080:8080 \
-     -e SECRET_KEY="$SECRET_KEY" \
-     -v e4p_temp:/tmp/e4p \
-     --restart unless-stopped \
-     e4p
-   ```
+The repository includes a `setup.sh` helper that configures the environment, prompts for an optional domain, and ensures local git commits use the `zZedix` identity automatically.
 
-3. **Using CLI (Alternative)**:
-   ```bash
-   # Install and start with CLI
-   curl -sSL https://raw.githubusercontent.com/zZedix/E4P/main/install.sh | bash
-   
-   # Or if already installed
-   E4P start
-   ```
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+Follow the prompts:
+
+- **Provide a domain** to enable HTTPS. The script uses Docker Compose to launch the FastAPI app behind Nginx, obtains a Let's Encrypt certificate via Certbot, and keeps it renewed automatically.
+- **Leave the domain blank** to run the application over plain HTTP on `http://localhost:8080` without the Nginx/Certbot stack.
+
+##### Running with a domain (HTTPS)
+
+1. Point your domain's DNS records to the host running the containers.
+2. Run `./setup.sh` and enter the domain (and optionally a contact email for Let's Encrypt).
+3. The script will:
+   - Update `.env` with `DOMAIN`, `ENABLE_SSL`, and certificate metadata.
+   - Request a certificate using the ACME HTTP-01 challenge (`certbot certonly --webroot`).
+   - Start the `nginx` and `certbot-renew` services (profile `https`) that listen on ports **80** and **443** and proxy traffic to the FastAPI app running under Gunicorn/Uvicorn workers.
+   - Reload Nginx automatically every 12 hours so renewed certificates are picked up without downtime.
+4. Access the site at `https://<your-domain>`.
+
+##### Running without a domain (HTTP only)
+
+- Run `./setup.sh` and press **Enter** when prompted for a domain.
+- Only the FastAPI container starts, listening on `http://localhost:8080` (or a custom `APP_HTTP_PORT` defined in `.env`).
+
+#### Manual Docker Compose commands
+
+Advanced users can manage the stack directly:
+
+```bash
+# Start HTTP-only deployment
+docker compose up -d e4p
+
+# (Optional) Enable HTTPS components after running certbot once
+docker compose --profile https up -d nginx certbot-renew
+
+# Request a certificate manually (replace example.com and email)
+docker compose --profile https run --rm certbot certonly \
+  --webroot -w /var/www/certbot \
+  -d example.com --email admin@example.com \
+  --agree-tos --no-eff-email --non-interactive
+
+# Stop everything
+docker compose down --remove-orphans
+```
+
+> **Note:** The `setup.sh` helper orchestrates these steps automatically and is the recommended way to get started.
+
+#### Using Docker directly
+
+```bash
+# Generate a secure secret key
+SECRET_KEY=$(openssl rand -base64 32)
+
+# Build the image
+docker build -t e4p .
+
+# Create volume for temporary files
+docker volume create e4p_temp
+
+# Run the container
+docker run -d \
+  --name e4p-app \
+  -p 8080:8080 \
+  -e SECRET_KEY="$SECRET_KEY" \
+  -v e4p_temp:/tmp/e4p \
+  --restart unless-stopped \
+  e4p
+```
+
+#### CLI alternative
+
+```bash
+# Install and start with CLI
+curl -sSL https://raw.githubusercontent.com/zZedix/E4P/main/install.sh | bash
+
+# Or if already installed
+E4P start
+```
+
+### 🔄 Renewing SSL certificates
+
+- The `certbot-renew` service runs inside Docker (profile `https`) and checks for renewals twice per day. Nginx automatically reloads to pick up new certificates.
+- To verify renewal status manually:
+  ```bash
+  docker compose --profile https logs certbot-renew
+  ```
+- To perform a manual dry-run renewal:
+  ```bash
+  docker compose --profile https run --rm certbot renew --dry-run
+  ```
 
 ## 📁 E4P File Format
 
@@ -176,7 +231,13 @@ E4P uses a custom binary container format with the following structure:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `APP_HOST` | `0.0.0.0` | Server host |
-| `APP_PORT` | `8080` | Server port |
+| `APP_PORT` | `8080` | Internal server port used by the FastAPI app |
+| `APP_HTTP_PORT` | `8080` | Published host port when running without HTTPS |
+| `DOMAIN` | _(empty)_ | Domain name used for HTTPS deployments |
+| `ENABLE_SSL` | `false` | Enables the Nginx + Certbot stack when `true` |
+| `EMAIL_FOR_LETSENCRYPT` | _(empty)_ | Contact email passed to Let's Encrypt |
+| `GUNICORN_WORKERS` | `2` | Worker processes used when running under Docker |
+| `NGINX_RELOAD_INTERVAL` | `43200` | Seconds between automated Nginx reloads (pick up renewed certs) |
 | `MAX_FILE_SIZE_MB` | `2048` | Maximum file size in MB |
 | `MAX_CONCURRENCY` | `2` | Maximum concurrent encryption tasks |
 | `ARGON2_MEMORY_MB` | `256` | Argon2id memory cost in MB |
