@@ -31,6 +31,37 @@ git clone https://github.com/zZedix/E4P.git && cd E4P && install.bat
 
 **Note**: The one-line installation automatically installs all dependencies and starts the server. No manual configuration required!
 
+## 🖥️ Command Line Interface (CLI)
+
+E4P includes a powerful CLI for easy management. After installation, you can use the `E4P` command from anywhere:
+
+### Interactive Mode
+```bash
+E4P
+```
+
+### Direct Commands
+```bash
+E4P status      # Show application status
+E4P start       # Start the server
+E4P stop        # Stop the server
+E4P restart     # Restart the server
+E4P update      # Update to latest version
+E4P logs        # View application logs
+E4P config      # Edit configuration
+E4P test        # Run tests
+E4P install     # Install dependencies
+E4P clean       # Clean temporary files
+```
+
+### CLI Features
+- **Status Monitoring**: Check if E4P is running, view PID, uptime, memory usage
+- **Process Management**: Start, stop, restart the server
+- **Updates**: Pull latest changes and restart automatically
+- **Logs**: View real-time application logs
+- **Configuration**: Edit settings with your preferred editor
+- **Testing**: Run application tests
+- **Maintenance**: Clean temporary files and reinstall dependencies
 
 ### Manual Installation
 

@@ -87,6 +87,22 @@ cd E4P
 echo "📦 Installing Python dependencies..."
 pip3 install -r requirements.txt --quiet
 
+# Install CLI globally
+echo "🔧 Installing E4P CLI globally..."
+if [ -w /usr/local/bin ]; then
+    cp E4P /usr/local/bin/
+    chmod +x /usr/local/bin/E4P
+    echo "✅ E4P CLI installed to /usr/local/bin/E4P"
+elif [ -w ~/.local/bin ]; then
+    mkdir -p ~/.local/bin
+    cp E4P ~/.local/bin/
+    chmod +x ~/.local/bin/E4P
+    echo "✅ E4P CLI installed to ~/.local/bin/E4P"
+    echo "💡 Add ~/.local/bin to your PATH if not already there"
+else
+    echo "⚠️  Could not install CLI globally. You can run './E4P' from this directory."
+fi
+
 # Create .env file
 echo "⚙️  Creating configuration file..."
 cp env.example .env
